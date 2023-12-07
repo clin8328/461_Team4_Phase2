@@ -40,38 +40,27 @@ exports.fetchGitHubData = void 0;
 var cheerio = require('cheerio');
 function fetchGitHubData(gitHubUrl) {
     return __awaiter(this, void 0, void 0, function () {
-        var response, arrayBuffer, zipContent, readmeResponse, readmeJson, readmeHtml, $, readmeText, error_1;
+        var zipResponse, zipArrayBuffer, zipContent, readmeResponse, readmeText, $, readmeContent, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 5, , 6]);
                     return [4 /*yield*/, fetch(gitHubUrl + '/archive/main.zip')];
                 case 1:
-                    response = _a.sent();
-                    return [4 /*yield*/, response.arrayBuffer()];
+                    zipResponse = _a.sent();
+                    return [4 /*yield*/, zipResponse.arrayBuffer()];
                 case 2:
-                    arrayBuffer = _a.sent();
-                    zipContent = new Uint8Array(arrayBuffer);
+                    zipArrayBuffer = _a.sent();
+                    zipContent = new Uint8Array(zipArrayBuffer);
                     return [4 /*yield*/, fetch(gitHubUrl + '/blob/main/README.md')];
                 case 3:
                     readmeResponse = _a.sent();
-                    return [4 /*yield*/, readmeResponse.json()];
+                    return [4 /*yield*/, readmeResponse.text()];
                 case 4:
-                    readmeJson = _a.sent();
-                    // Check if the expected properties exist in the JSON response
-                    if (readmeJson &&
-                        readmeJson.payload &&
-                        readmeJson.payload.blob &&
-                        readmeJson.payload.blob.richText) {
-                        readmeHtml = readmeJson.payload.blob.richText;
-                        $ = cheerio.load(readmeHtml);
-                        readmeText = $('article').text();
-                        return [2 /*return*/, { zipContent: zipContent, readmeContent: readmeText }];
-                    }
-                    else {
-                        throw new Error('Invalid GitHub API response structure');
-                    }
-                    return [3 /*break*/, 6];
+                    readmeText = _a.sent();
+                    $ = cheerio.load(readmeText);
+                    readmeContent = $('article').text();
+                    return [2 /*return*/, { zipContent: zipContent, readmeContent: readmeContent }];
                 case 5:
                     error_1 = _a.sent();
                     throw new Error("Error fetching GitHub data: ".concat(error_1.message));

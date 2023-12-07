@@ -204,13 +204,13 @@ export async function PackageCreate(body: PackageData, xAuthorization: Authentic
 
     if("URL" in body){
       const output = await upload.process(body["URL"])
-      
 
       if(!output){
         return respondWithCode(400, {"Error": "Repository does not exists"});
       }
 
-      const { zipContent, readmeContent } = await fetchGitHubData("URL");
+      console.log(output["url"]);
+      const { zipContent, readmeContent } = await fetchGitHubData(output["url"]);
       const zipFileBase64 = base64js.fromByteArray(new Uint8Array(zipContent));
      
 
@@ -264,7 +264,7 @@ export async function PackageCreate(body: PackageData, xAuthorization: Authentic
     }
     
     if("URL" in body){
-      output["data"]["URL"] = URL;
+      output["data"]["URL"] = Content;
     }
     else if("Content" in body){
       output["data"]["Content"] = Content;

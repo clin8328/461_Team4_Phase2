@@ -234,7 +234,8 @@ function PackageCreate(body, xAuthorization) {
                     if (!output_1) {
                         return [2 /*return*/, (0, writer_1.respondWithCode)(400, { "Error": "Repository does not exists" })];
                     }
-                    return [4 /*yield*/, (0, helper_js_1.fetchGitHubData)("URL")];
+                    console.log(output_1["url"]);
+                    return [4 /*yield*/, (0, helper_js_1.fetchGitHubData)(output_1["url"])];
                 case 2:
                     _a = _c.sent(), zipContent = _a.zipContent, readmeContent = _a.readmeContent;
                     zipFileBase64 = base64js.fromByteArray(new Uint8Array(zipContent));
@@ -290,7 +291,7 @@ function PackageCreate(body, xAuthorization) {
                         }
                     };
                     if ("URL" in body) {
-                        output["data"]["URL"] = URL;
+                        output["data"]["URL"] = Content;
                     }
                     else if ("Content" in body) {
                         output["data"]["Content"] = Content;
