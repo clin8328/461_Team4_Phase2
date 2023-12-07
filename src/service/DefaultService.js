@@ -36,13 +36,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PackageByNameDelete = exports.UserPost = exports.UserDelete = exports.MyPage = exports.RegistryReset = exports.PackagesList = exports.PackageUpdate = exports.PackageRetrieve = exports.PackageRate = exports.PackageDelete = exports.PackageCreate = exports.fetchGitHubData = exports.PackageByRegExGet = exports.PackageByNameGet = exports.CreateAuthToken = void 0;
+exports.PackageByNameDelete = exports.UserPost = exports.UserDelete = exports.MyPage = exports.RegistryReset = exports.PackagesList = exports.PackageUpdate = exports.PackageRetrieve = exports.PackageRate = exports.PackageDelete = exports.PackageCreate = exports.PackageByRegExGet = exports.PackageByNameGet = exports.CreateAuthToken = void 0;
 var writer_1 = require("../utils/writer"); // Import the response function
 var path = require("path");
 var compare_versions_1 = require("compare-versions");
 var authHelper = require("../authentication/authenticationHelper");
 var cheerio = require('cheerio');
 var base64js = require('base64-js');
+var helper_js_1 = require("../utils/helper.js");
 var _a = require("../database_files/database_connect"), db = _a.db, promisePool = _a.promisePool;
 // const queryAsync = util.promisify(pool.query);
 /**
@@ -197,49 +198,6 @@ function PackageByRegExGet(body, xAuthorization) {
     });
 }
 exports.PackageByRegExGet = PackageByRegExGet;
-function fetchGitHubData(gitHubUrl) {
-    return __awaiter(this, void 0, void 0, function () {
-        var response, arrayBuffer, zipContent, readmeResponse, readmeJson, readmeHtml, $, readmeText, error_3;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    _a.trys.push([0, 5, , 6]);
-                    return [4 /*yield*/, fetch(gitHubUrl + '/archive/main.zip')];
-                case 1:
-                    response = _a.sent();
-                    return [4 /*yield*/, response.arrayBuffer()];
-                case 2:
-                    arrayBuffer = _a.sent();
-                    zipContent = new Uint8Array(arrayBuffer);
-                    return [4 /*yield*/, fetch(gitHubUrl + '/blob/main/README.md')];
-                case 3:
-                    readmeResponse = _a.sent();
-                    return [4 /*yield*/, readmeResponse.json()];
-                case 4:
-                    readmeJson = _a.sent();
-                    // Check if the expected properties exist in the JSON response
-                    if (readmeJson &&
-                        readmeJson.payload &&
-                        readmeJson.payload.blob &&
-                        readmeJson.payload.blob.richText) {
-                        readmeHtml = readmeJson.payload.blob.richText;
-                        $ = cheerio.load(readmeHtml);
-                        readmeText = $('article').text();
-                        return [2 /*return*/, { zipContent: zipContent, readmeContent: readmeText }];
-                    }
-                    else {
-                        throw new Error('Invalid GitHub API response structure');
-                    }
-                    return [3 /*break*/, 6];
-                case 5:
-                    error_3 = _a.sent();
-                    throw new Error("Error fetching GitHub data: ".concat(error_3.message));
-                case 6: return [2 /*return*/];
-            }
-        });
-    });
-}
-exports.fetchGitHubData = fetchGitHubData;
 /**
  *
  * @param body PackageData
@@ -249,7 +207,7 @@ exports.fetchGitHubData = fetchGitHubData;
 var upload_endpoint_js_1 = require("../app_endpoints/upload_endpoint.js");
 function PackageCreate(body, xAuthorization) {
     return __awaiter(this, void 0, void 0, function () {
-        var Name, Content, URL, Version, JSProgram, upload, output_1, _a, zipContent, readmeContent, zipFileBase64, textDecoder, zipContentString, github_link, output_2, package_exist_check, _b, result, fields, output, error_4;
+        var Name, Content, URL, Version, JSProgram, upload, output_1, _a, zipContent, readmeContent, zipFileBase64, github_link, output_2, package_exist_check, _b, result, fields, output, error_3;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
@@ -273,17 +231,15 @@ function PackageCreate(body, xAuthorization) {
                     return [4 /*yield*/, upload.process(body["URL"])];
                 case 1:
                     output_1 = _c.sent();
-                    return [4 /*yield*/, fetchGitHubData("URL")];
-                case 2:
-                    _a = _c.sent(), zipContent = _a.zipContent, readmeContent = _a.readmeContent;
-                    zipFileBase64 = base64js.fromByteArray(new Uint8Array(zipContent));
                     if (!output_1) {
                         return [2 /*return*/, (0, writer_1.respondWithCode)(400, { "Error": "Repository does not exists" })];
                     }
-                    textDecoder = new TextDecoder('urf-8');
-                    zipContentString = textDecoder.decode(zipContent);
+                    return [4 /*yield*/, (0, helper_js_1.fetchGitHubData)("URL")];
+                case 2:
+                    _a = _c.sent(), zipContent = _a.zipContent, readmeContent = _a.readmeContent;
+                    zipFileBase64 = base64js.fromByteArray(new Uint8Array(zipContent));
                     Name = output_1["repo"];
-                    Content = zipContentString;
+                    Content = zipFileBase64;
                     URL = output_1["url"];
                     Version = "1.0.5";
                     return [3 /*break*/, 6];
@@ -342,9 +298,9 @@ function PackageCreate(body, xAuthorization) {
                     console.log('Packaged added successfully');
                     return [2 /*return*/, (0, writer_1.respondWithCode)(201, output)];
                 case 9:
-                    error_4 = _c.sent();
-                    console.error('Error calling the stored procedure:', error_4);
-                    throw error_4; // Re-throw the error for the caller to handle
+                    error_3 = _c.sent();
+                    console.error('Error calling the stored procedure:', error_3);
+                    throw error_3; // Re-throw the error for the caller to handle
                 case 10: return [2 /*return*/];
             }
         });
@@ -360,7 +316,7 @@ exports.PackageCreate = PackageCreate;
  **/
 function PackageDelete(id, xAuthorization) {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, result, fields, error_5;
+        var _a, result, fields, error_4;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -376,9 +332,9 @@ function PackageDelete(id, xAuthorization) {
                     }
                     return [3 /*break*/, 3];
                 case 2:
-                    error_5 = _b.sent();
-                    console.log(error_5);
-                    throw error_5;
+                    error_4 = _b.sent();
+                    console.log(error_4);
+                    throw error_4;
                 case 3: return [2 /*return*/];
             }
         });
@@ -394,7 +350,7 @@ exports.PackageDelete = PackageDelete;
 var rate_endpoint_js_1 = require("../app_endpoints/rate_endpoint.js");
 function PackageRate(id, xAuthorization) {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, result, fields, outputURL, output, hasInvalidScore, error_6;
+        var _a, result, fields, outputURL, output, hasInvalidScore, error_5;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -416,7 +372,7 @@ function PackageRate(id, xAuthorization) {
                 case 3: return [2 /*return*/, (0, writer_1.respondWithCode)(404, { "Error": "Package does not exist." })];
                 case 4: return [3 /*break*/, 6];
                 case 5:
-                    error_6 = _b.sent();
+                    error_5 = _b.sent();
                     return [2 /*return*/, (0, writer_1.respondWithCode)(500, { "Error": 'The package rating system choked on at least one of the metrics.' })];
                 case 6: return [2 /*return*/];
             }
@@ -434,7 +390,7 @@ exports.PackageRate = PackageRate;
  **/
 function PackageRetrieve(id, xAuthorization) {
     return __awaiter(this, void 0, void 0, function () {
-        var query, values, results, error_7;
+        var query, values, results, error_6;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -453,9 +409,9 @@ function PackageRetrieve(id, xAuthorization) {
                     }
                     return [3 /*break*/, 3];
                 case 2:
-                    error_7 = _a.sent();
-                    console.error('Error calling the stored procedure:', error_7);
-                    throw error_7;
+                    error_6 = _a.sent();
+                    console.error('Error calling the stored procedure:', error_6);
+                    throw error_6;
                 case 3: return [2 /*return*/];
             }
         });
@@ -473,7 +429,7 @@ exports.PackageRetrieve = PackageRetrieve;
  **/
 function PackageUpdate(body, id, xAuthorization) {
     return __awaiter(this, void 0, void 0, function () {
-        var results, error_8;
+        var results, error_7;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -504,9 +460,9 @@ function PackageUpdate(body, id, xAuthorization) {
                     }
                     return [3 /*break*/, 3];
                 case 2:
-                    error_8 = _a.sent();
-                    console.log(error_8);
-                    throw error_8;
+                    error_7 = _a.sent();
+                    console.log(error_7);
+                    throw error_7;
                 case 3: return [2 /*return*/];
             }
         });
