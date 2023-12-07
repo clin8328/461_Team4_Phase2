@@ -13,6 +13,8 @@ import {
 } from 'mysql2/promise';
 import * as jwt from "jsonwebtoken";
 import * as authHelper from '../authentication/authenticationHelper';
+const cheerio = require('cheerio');
+const base64js = require('base64-js');
 
 const { db, promisePool } = require("../database_files/database_connect");
 
@@ -169,6 +171,42 @@ export async function PackageByRegExGet(body: PackageRegEx, xAuthorization: Auth
   }
 }
 
+export async function fetchGitHubData(gitHubUrl: string): Promise<{ zipContent: Uint8Array, readmeContent: string }> {
+  try {
+    // Fetch the ZIP file from the GitHub repository
+    const response = await fetch(gitHubUrl + '/archive/main.zip');
+    const arrayBuffer = await response.arrayBuffer();
+    const zipContent = new Uint8Array(arrayBuffer);
+
+    // Fetch the README file from the GitHub repository (assuming it's in the root of the repository)
+    const readmeResponse = await fetch(gitHubUrl + '/blob/main/README.md');
+    const readmeJson = await readmeResponse.json();
+
+    // Check if the expected properties exist in the JSON response
+    if (
+      readmeJson &&
+      readmeJson.payload &&
+      readmeJson.payload.blob &&
+      readmeJson.payload.blob.richText
+    ) {
+      // Extract the actual content from the JSON response
+      const readmeHtml = readmeJson.payload.blob.richText;
+
+      // Use cheerio to parse the HTML and extract the text
+      const $ = cheerio.load(readmeHtml);
+      const readmeText = $('article').text();
+      
+      
+
+      return { zipContent, readmeContent: readmeText };
+    } else {
+      throw new Error('Invalid GitHub API response structure');
+    }
+  } catch (error) {
+    throw new Error(`Error fetching GitHub data: ${error.message}`);
+  }
+}
+
 /**
  *
  * @param body PackageData 
@@ -179,7 +217,7 @@ import { Upload } from '../app_endpoints/upload_endpoint.js';
 export async function PackageCreate(body: PackageData, xAuthorization: AuthenticationToken) {
   try {
     var Name: string = "";
-    var Content = "";
+    let Content = "";
     var URL: string = "";
     var Version:string = "";
     var JSProgram:any = "";
@@ -197,12 +235,17 @@ export async function PackageCreate(body: PackageData, xAuthorization: Authentic
 
     if("URL" in body){
       const output = await upload.process(body["URL"])
+      const { zipContent, readmeContent } = await fetchGitHubData("URL");
+      const zipFileBase64 = base64js.fromByteArray(new Uint8Array(zipContent));
+
       if(!output){
         return respondWithCode(400, {"Error": "Repository does not exists"});
       }
+      const textDecoder = new TextDecoder('urf-8');
+      const zipContentString: string = textDecoder.decode(zipContent);
 
       Name = output["repo"];
-      Content = 'N/A';
+      Content = zipContentString;
       URL = output["url"];
       Version = "1.0.5";
       //JSProgram = body["JSProgram"];
@@ -219,7 +262,7 @@ export async function PackageCreate(body: PackageData, xAuthorization: Authentic
         return respondWithCode(400, {"Error": "Repository does not exists"});
       }
       Name = output["repo"];
-      Content = "Content";
+      //Content = "Content";
       URL = 'N/A';
       Version = "1.0.0";
     }
